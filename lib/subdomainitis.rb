@@ -118,6 +118,12 @@ module Subdomainitis
     def host_name(subdomain_parameter, host)
       raise HostRequired.new unless host
       index = -1 - tld_length
+      subdomain_parameter = if subdomain_parameter.respond_to?(:to_param)
+        subdomain_parameter.to_param
+      else
+        subdomain_parameter
+      end
+
       ([subdomain_parameter] + host.split(".")[index..-1]).join(".")
     end
 

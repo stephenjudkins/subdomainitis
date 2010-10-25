@@ -63,6 +63,11 @@ describe Subdomainitis do
         {:use_route => 'sub_domain_onlys', :account => 'foo'}.should generate_url("http://foo.test.host/sub_domain_onlys")
       end
 
+      it "should generate a URL based on a parameter that has responds_to #to_param" do
+        object = mock("object", :to_param => 'foo')
+        {:use_route => 'sub_domain_onlys', :account => object}.should generate_url("http://foo.test.host/sub_domain_onlys")
+      end
+
       it "should work when using named route helpers" do
         url_helpers.sub_domain_onlys_url(:host => 'test.host', :account => 'foo').
           should == "http://foo.test.host/sub_domain_onlys"
