@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    subdomainitis (0.9.0)
+    subdomainitis (0.9.1)
       rails (= 3.0.1)
 
 GEM
