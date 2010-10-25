@@ -171,6 +171,11 @@ describe Subdomainitis do
         {:use_route => 'sub_domain_onlys', :account => 'foo'}.should generate_url("http://test.host/sub_domain_onlys?_subdomain=foo")
       end
 
+      it "should generate a URL based on a parameter that has responds_to #to_param" do
+        object = mock("object", :to_param => 'foo')
+        {:use_route => 'sub_domain_onlys', :account => object}.should generate_url("http://test.host/sub_domain_onlys?_subdomain=foo")
+      end
+
       it "should recognize a route subdomain route" do
         "http://test.host/sub_domain_onlys?_subdomain=foo".should resolve_to(
           :controller => 'sub_domain_onlys',
@@ -191,6 +196,45 @@ describe Subdomainitis do
     end
 
 
+  end
+
+  describe "with tld_length set" do
+    before do
+      @routes = ActionDispatch::Routing::RouteSet.new
+      @routes.draw do
+        extend Subdomainitis
+
+        main_domain do
+          resources :boths, :as => :main_domain_boths
+          resources :main_domain_onlys
+        end
+
+        subdomain_as(:account) do
+          resources :boths, :as => :subdomain_boths
+          resources :sub_domain_onlys
+        end
+
+        self.tld_length = 2
+      end
+    end
+
+    it "should recognize the third-level domain as subdomain" do
+      "http://foo.bar.test.host/sub_domain_onlys".should resolve_to(
+        :controller => 'sub_domain_onlys', :action => 'index', :account => 'foo')
+    end
+
+    it "should recognize second-level domains as main domain" do
+      "http://bar.test.host/main_domain_onlys".should resolve_to(
+        :controller => 'main_domain_onlys', :action => 'index')
+    end
+
+    it "should generate URLs to a four-level hostname" do
+      {:use_route => 'sub_domain_onlys', :account => "foo", :host => "a.b.c"}.should generate_url("http://foo.a.b.c/sub_domain_onlys")
+    end
+
+    it "should generate main URLs with a three-level hostname" do
+      {:use_route => 'main_domain_onlys', :host => "a.b.c"}.should generate_url("http://a.b.c/main_domain_onlys")
+    end
   end
 
 

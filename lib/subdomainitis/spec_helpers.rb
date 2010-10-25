@@ -39,7 +39,7 @@ module Subdomainitis
     end
 
     def generate(args)
-      url_helpers.url_for(args.merge(:host => 'test.host'))
+      url_helpers.url_for({:host => 'test.host'}.merge(args))
     end
 
     def url_helpers

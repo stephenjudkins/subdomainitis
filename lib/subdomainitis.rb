@@ -1,6 +1,7 @@
 module Subdomainitis
 
   SUBDOMAIN_KEY = "_subdomain"
+  DEFAULT_TLD_LENGTH = 1
 
   class IsSubdomain
     def initialize(route_set)
@@ -8,11 +9,13 @@ module Subdomainitis
     end
     attr_reader :route_set
 
+    delegate :use_fake_subdomains, :tld_length, :to => :route_set
+
     def matches?(request)
-      if route_set.use_fake_subdomains
+      if use_fake_subdomains
         request.GET.has_key?(SUBDOMAIN_KEY)
       else
-        request.subdomain.present?
+        request.subdomain(tld_length).present?
       end
     end
   end
@@ -65,6 +68,7 @@ module Subdomainitis
     end
 
     attr_reader :route_set, :subdomain_key, :dispatcher
+    delegate :use_fake_subdomains, :tld_length, :to => :route_set
 
     PATH_PARAMETER_KEY = 'action_dispatch.request.path_parameters'
 
@@ -78,10 +82,10 @@ module Subdomainitis
     end
 
     def subdomain_from(request)
-      if route_set.use_fake_subdomains
+      if use_fake_subdomains
         request.GET[SUBDOMAIN_KEY]
       else
-        request.subdomain
+        request.subdomain(tld_length)
       end
     end
   end
@@ -113,18 +117,24 @@ module Subdomainitis
 
     def host_name(subdomain_parameter, host)
       raise HostRequired.new unless host
-      ([subdomain_parameter] + host.split(".")[-2..-1]).join(".")
+      index = -1 - tld_length
+      ([subdomain_parameter] + host.split(".")[index..-1]).join(".")
     end
 
   end
 
-  def self.extended(router)
-    router.instance_variable_get(:@set).class_eval do
+  def self.extended(mapper)
+    mapper.instance_variable_get(:@set).class_eval do
       include RouteSetMethods
       alias_method_chain :url_for, :subdomains
-      attr_accessor :subdomain_routes, :use_fake_subdomains
+      attr_accessor :subdomain_routes, :use_fake_subdomains, :tld_length
     end
+
+    delegate :tld_length=, :to => :@set
+
+    mapper.tld_length = DEFAULT_TLD_LENGTH
   end
+
 
   class HostRequired < Exception
     def initialize
