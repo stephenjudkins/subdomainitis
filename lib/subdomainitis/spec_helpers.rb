@@ -17,7 +17,7 @@ module Subdomainitis
     define :resolve_to do |expected|
       match do |path|
         called = false
-        uri = URI.parse(path)
+
         controller_class = "#{expected[:controller].camelize}Controller".constantize
         controller_instance = mock(controller_class)
         controller_class.should_receive(:action).any_number_of_times.with(expected[:action]).and_return(controller_instance)

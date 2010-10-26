@@ -76,7 +76,7 @@ module Subdomainitis
       request = ActionDispatch::Request.new env
 
       path_parameters = env[PATH_PARAMETER_KEY].merge(subdomain_key => subdomain_from(request))
-      env = env.merge(PATH_PARAMETER_KEY => path_parameters)
+      env[PATH_PARAMETER_KEY] = path_parameters
 
       dispatcher.call(env)
     end
