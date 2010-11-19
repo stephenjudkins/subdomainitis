@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "subdomainitis"
-  s.version     = "0.9.21"
+  s.version     = "0.9.22"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Stephen Judkins"]
   s.email       = ["stephen.judkins@gmail.com"]
@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency "rspec"
   # the implementation is tied pretty closely to Rails internals API, so I'm locking to specific version for now
-  s.add_dependency "rails", "3.0.1"
+  s.add_dependency "rails", ">= 3.0.3"
 
   s.files        = Dir.glob("{bin,lib}/**/*") + %w(LICENSE README.md)
   s.require_path = 'lib'
