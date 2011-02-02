@@ -110,7 +110,7 @@ describe Subdomainitis do
 
     context "with routes only on the main domain" do
       it "should generate a URL to the main domain" do
-        {:use_route => 'main_domain_onlys'}.should generate_url("http://test.host/main_domain_onlys")
+        {:use_route => 'main_domain_onlys', :host => "subdomain.test.host"}.should generate_url("http://test.host/main_domain_onlys")
       end
 
       it "should recognize the main domain route" do

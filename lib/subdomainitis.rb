@@ -28,7 +28,7 @@ module Subdomainitis
 
 
   class SubdomainRouteSet < ActionDispatch::Routing::RouteSet
-    def initialize(parent_route_set, subdomain_key)
+     def initialize(parent_route_set, subdomain_key)
       @parent_route_set, @subdomain_key = parent_route_set, subdomain_key
       super *[]
     end
@@ -45,7 +45,31 @@ module Subdomainitis
         [IsSubdomain.new(parent_route_set)],
         request_class
       )
+
     end
+
+  end
+
+  class MainDomainRouteSet < ActionDispatch::Routing::RouteSet
+
+    def initialize(parent_route_set)
+      @parent_route_set = parent_route_set
+      super *[]
+    end
+    attr_reader :parent_route_set
+
+    def add_route(app, conditions = {}, requirements = {}, defaults = {}, name = nil, anchor = true)
+      parent_route_set.add_maindomain_route name
+      parent_route_set.add_route wrap(app), conditions, requirements, defaults, name, anchor
+    end
+    def wrap(app)
+      ActionDispatch::Routing::Mapper::Constraints.new(
+        app,
+        [IsMaindomain.new(parent_route_set)],
+        request_class
+      )
+    end
+
   end
 
   def subdomain_as(subdomain_key, &block)
@@ -55,7 +79,9 @@ module Subdomainitis
   end
 
   def main_domain(&block)
-    constraints IsMaindomain.new(@set), &block
+    @set.maindomain_routes ||= {}
+    maindomain_routeset = MainDomainRouteSet.new @set
+    maindomain_routeset.draw &block
   end
 
   def use_fake_subdomains!
@@ -92,8 +118,11 @@ module Subdomainitis
 
   module RouteSetMethods
     def url_for_with_subdomains(args)
-      if subdomain_key = subdomain_routes[args[:use_route]]
+      route_name = args[:use_route]
+      if subdomain_key = subdomain_routes[route_name]
         subdomain_url_for(subdomain_key, args.dup)
+      elsif maindomain_routes[route_name]
+        maindomain_url_for(args.dup)
       else
         url_for_without_subdomains args
       end
@@ -111,20 +140,42 @@ module Subdomainitis
       end)
     end
 
+    def maindomain_url_for(args)
+      raise HostRequired.new if args[:only_path]
+
+      url_for_without_subdomains(if use_fake_subdomains
+        args
+      else
+        args.merge :host => main_domain_host(args[:host])
+      end)
+    end
+
     def add_subdomain_route(name, subdomain_key)
       subdomain_routes[name] = subdomain_key
     end
 
+    def add_maindomain_route(name)
+      maindomain_routes[name] = true
+    end
+
     def host_name(subdomain_parameter, host)
       raise HostRequired.new unless host
-      index = -1 - tld_length
+
       subdomain_parameter = if subdomain_parameter.respond_to?(:to_param)
         subdomain_parameter.to_param
       else
         subdomain_parameter
       end
 
-      ([subdomain_parameter] + host.split(".")[index..-1]).join(".")
+      ([subdomain_parameter] + host.split(".")[subdomain_index..-1]).join(".")
+    end
+
+    def main_domain_host(host)
+      host.split(".")[subdomain_index..-1].join(".")
+    end
+
+    def subdomain_index
+      -1 - tld_length
     end
 
   end
@@ -133,7 +184,7 @@ module Subdomainitis
     mapper.instance_variable_get(:@set).class_eval do
       include RouteSetMethods
       alias_method_chain :url_for, :subdomains
-      attr_accessor :subdomain_routes, :use_fake_subdomains, :tld_length
+      attr_accessor :subdomain_routes, :maindomain_routes, :use_fake_subdomains, :tld_length
     end
 
     delegate :tld_length=, :to => :@set
