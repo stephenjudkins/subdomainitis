@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "subdomainitis"
-  s.version     = "0.9.22"
+  s.version     = "0.9.3"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Stephen Judkins"]
   s.email       = ["stephen.judkins@gmail.com"]
