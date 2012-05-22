@@ -73,13 +73,11 @@ module Subdomainitis
   end
 
   def subdomain_as(subdomain_key, &block)
-    @set.subdomain_routes ||= {}
     subdomain_routeset = SubdomainRouteSet.new @set, subdomain_key
     subdomain_routeset.draw &block
   end
 
   def main_domain(&block)
-    @set.maindomain_routes ||= {}
     maindomain_routeset = MainDomainRouteSet.new @set
     maindomain_routeset.draw &block
   end
@@ -117,6 +115,17 @@ module Subdomainitis
   end
 
   module RouteSetMethods
+    def clear!
+      subdomainitis_defaults!
+      super
+    end
+
+    def subdomainitis_defaults!
+      self.tld_length = DEFAULT_TLD_LENGTH
+      self.subdomain_routes = {}
+      self.maindomain_routes = {}
+    end
+
     def url_for_with_subdomains(args)
       route_name = args[:use_route]
       if subdomain_key = subdomain_routes[route_name]
@@ -181,15 +190,19 @@ module Subdomainitis
   end
 
   def self.extended(mapper)
-    mapper.instance_variable_get(:@set).class_eval do
-      include RouteSetMethods
-      alias_method_chain :url_for, :subdomains
-      attr_accessor :subdomain_routes, :maindomain_routes, :use_fake_subdomains, :tld_length
+    set = mapper.instance_variable_get(:@set)
+
+    unless set.is_a? RouteSetMethods
+      set.class_eval do
+        include RouteSetMethods
+        alias_method_chain :url_for, :subdomains
+        attr_accessor :subdomain_routes, :maindomain_routes, :use_fake_subdomains, :tld_length
+      end
     end
 
     delegate :tld_length=, :to => :@set
 
-    mapper.tld_length = DEFAULT_TLD_LENGTH
+    set.subdomainitis_defaults!
   end
 
 

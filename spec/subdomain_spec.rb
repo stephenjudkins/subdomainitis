@@ -242,5 +242,26 @@ describe Subdomainitis do
     end
   end
 
+  context "using clear!" do
+    before do
+      @routes = ActionDispatch::Routing::RouteSet.new
+      @routes.draw do
+        extend Subdomainitis
+      end
+      @routes.clear!
+
+      @routes.draw do
+        extend Subdomainitis
+        resources :foos
+      end
+
+    end
+
+    it "should not break" do
+      {:controller => 'foos', :action => 'index'}.should generate_url("http://test.host/foos")
+    end
+
+  end
+
 
 end
