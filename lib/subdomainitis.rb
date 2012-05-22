@@ -91,6 +91,11 @@ module Subdomainitis
       @route_set, @dispatcher, @subdomain_key = route_set, dispatcher, subdomain_key
     end
 
+    # so running rake routes doesn't spew a bunch of gibberish
+    def inspect
+      self.class
+    end
+
     attr_reader :route_set, :subdomain_key, :dispatcher
     delegate :use_fake_subdomains, :tld_length, :to => :route_set
 
