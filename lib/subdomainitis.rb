@@ -217,4 +217,22 @@ module Subdomainitis
     end
   end
 
+  class << self
+    def monkeypatch_route_inspector!
+      require 'rails/application/route_inspector'
+
+      name = :discover_rack_app
+      if defined? Rails::Application::RouteInspector
+        if Rails::Application::RouteInspector.instance_methods.include? name
+          old_discover_rack_app = Rails::Application::RouteInspector.instance_method name
+          Rails::Application::RouteInspector.instance_eval do
+            define_method name do |app|
+              old_discover_rack_app.bind(self).call(app) unless app.is_a? RouteSetMiddleware
+            end
+          end
+        end
+      end
+    end
+  end
+
 end
